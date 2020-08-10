@@ -1,0 +1,6 @@
+# Ignore training folders
+**/DEFAULT_
+**/FP_W2Q_INIT
+**/PARAMETRIC_FP_W2Q_B_XMAX_CON_INIT
+**/POW2_W2Q_INIT
+**/params_DEFAULT

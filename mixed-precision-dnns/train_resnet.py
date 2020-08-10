@@ -16,6 +16,25 @@ import sys
 import os
 import collections
 
+def save_nnp(nnp_file_name, net_name, batch_size, inp, vinp,  out, vout, loss):
+    contents = {
+    'networks': [
+        {'name': 'training-{}'.format(net_name),
+         'batch_size': batch_size,
+         'outputs': {'y': out},
+         'names': {'x':  inp, 'y': out}},
+        {'name': 'Validation-{}'.format(net_name),
+         'batch_size': batch_size,
+         'outputs': {'y': vout},
+         'names': {'x': vinp, 'y': vout}}],
+    'executors': [
+        {'name': 'Runtime',
+         'network': 'Validation-{}'.format(net_name),
+         'data': ['x'],
+         'output': ['y']}]}
+
+    import nnabla.utils.save 
+    nnabla.utils.save.save(nnp_file_name, contents, variable_batch_size=False)
 
 def clip_scalar(v, min_value, max_value):
     return F.minimum_scalar(F.maximum_scalar(v, min_value), max_value)
@@ -55,7 +74,6 @@ def configparser_getboolean(value):
     except KeyError:
         print("boolean values must be one of: {}"
               .format(', '.join(map(repr, boolean_states.keys()))))
-
 
 @attr.s
 class Configuration(object):
@@ -130,6 +148,7 @@ cfg.params_dir = f"{args.experiment}"
 if not os.path.exists(cfg.params_dir):
     os.makedirs(cfg.params_dir)
 
+nnp_out_name = args.experiment + '.nnp'
 
 def network_size_weights():
     """
@@ -658,6 +677,7 @@ def train():
                     best_v_err = v_err
                     nn.save_parameters(os.path.join(cfg.params_dir, 'params_best.h5'))
                     print(f'Best validation error (fulfilling constraints: {best_v_err}')
+                    save_nnp(os.path.join(cfg.params_dir, nnp_out_name), 'resnet20', batch_size, image, vimage, pred, vpred, loss)
                     sys.stdout.flush()
                     sys.stderr.flush()
 
@@ -680,6 +700,7 @@ def train():
              (cfg.target_activation_kbytes <= 0 or float(kbytes_activations.d) <= cfg.target_activation_kbytes))):
             best_v_err = v_err
             nn.save_parameters(os.path.join(cfg.params_dir, 'params_best.h5'))
+            save_nnp(os.path.join(cfg.params_dir, nnp_out_name), 'resnet20', batch_size, image, vimage, pred, vpred, loss)
             sys.stdout.flush()
             sys.stderr.flush()
 
@@ -794,7 +815,6 @@ def train():
                            fmt='%10.8f',
                            comments='',
                            delimiter=',')
-
 
 if __name__ == '__main__':
     train()
